@@ -1,26 +1,74 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import MessagesList from "./MessagesList";
+import NewMessageForm from "./NewMessageForm";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+import database from './firebaseConfig'
+
+const SENDER = 'Krzysztof'
+
+const initMessages = [
+	{
+		text: 'Hello',
+		sender: 'Mateusz',
+		date: Date.now()
+	}, {
+		text: 'hi!',
+		sender: 'Mateusz',
+		date: Date.now()
+	}
+]
+
+const App = () => {
+	const [newMessage, setMessage] = React.useState('');
+	const [messages, setMessages] = React.useState([]);
+
+	React.useEffect(() => { //componentDidMount
+		database.ref('messages').on(
+			'value',
+			(snapshot) => {
+
+				const messagesFromDb = snapshot.val()
+
+				const message = Object.entries(messagesFromDb || {})
+					.map(([key, message]) => ({
+						...message,
+						key
+					}))
+
+				setMessages(message)
+			}
+		)
+	}, [])
+
+	window.setMessages = setMessages
+
+	const sendMessageHandler = (event) => {
+		event.preventDefault()
+
+		addMessage(newMessage)
+	}
+
+	const addMessage = (newMessageText) => {
+		const newMessageObject = {
+			text: newMessageText,
+			sender: SENDER,
+			date: Date.now()
+		}
+
+		database.ref('messages').push(newMessageObject)
+		setMessage('')
+	}
+
+	return (
+		<div>
+			<MessagesList messages={messages}/>
+			<NewMessageForm
+				newMessage={newMessage}
+				setMessage={setMessage}
+				sendMessageHandler={sendMessageHandler}
+			/>
+		</div>
+	)
 }
 
-export default App;
+export default App
